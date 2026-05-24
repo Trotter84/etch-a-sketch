@@ -5,23 +5,45 @@
 #include <algorithm>
 #include <cstdlib>
 #include <ctime>
+
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode({800u, 600u}), "Etch-a-Sketch");
+    const int WINDOW_HEIGHT = 800u;
+    const int WINDOW_WIDTH = 600u;
+
+    sf::RenderWindow window(sf::VideoMode({WINDOW_HEIGHT, WINDOW_WIDTH}), "Etch-a-Sketch");
     window.setFramerateLimit(60);
+
     // Persistent canvas — can be drawn to without clearing so the trail remains
-    sf::RenderTexture canvas(sf::Vector2u{800u, 600u});
+    sf::RenderTexture canvas(sf::Vector2u{WINDOW_HEIGHT, WINDOW_WIDTH});
     canvas.clear(sf::Color(128, 128, 128));
     canvas.display();
     sf::Sprite canvasSprite(canvas.getTexture());
+
+    bool penDown = true;
+
     float radius = 5.f;
     float posX = 0.f;
     float posY = 0.f;
+
+    int r = 0;
+    int g = 0;
+    int b = 0;
+
+    // initialize outline point for pen up
+    sf::CircleShape outline(radius);
+    outline.setFillColor(sf::Color::Transparent);
+    outline.setOutlineColor(sf::Color(r, g, b));
+    outline.setOutlineThickness(2.f);
+
     // initialize our drawing point
     sf::CircleShape shape(radius);
-    shape.setFillColor(sf::Color::Black);
+    shape.setFillColor(sf::Color(r, g, b));
     shape.setPosition({posX, posY});
     sf::Clock clock;
+
+    std::srand(std::time(nullptr));
+
     // main game loop
     while (window.isOpen())
     {
@@ -34,19 +56,34 @@ int main()
                 switch (key->code)
                 {
                 case sf::Keyboard::Key::C:
-                    // TODO - change shape color
+                    r = std::rand() % 256;
+                    g = std::rand() % 256;
+                    b = std::rand() % 256;
+                    shape.setFillColor(sf::Color(r, g, b));
+                    outline.setOutlineColor(sf::Color(r, g, b));
                     break;
                 case sf::Keyboard::Key::Hyphen:
-                    // TODO - change shape size
+                    if (radius > 1.f)
+                    {
+                        radius = radius - 1.f;
+                        shape.setRadius(radius);
+                        outline.setRadius(radius);
+                    }
                     break;
                 case sf::Keyboard::Key::Equal:
-                    // TODO - change shape size
+                    if (radius < 22.f)
+                    {
+                        radius = radius + 1.f;
+                        shape.setRadius(radius);
+                        outline.setRadius(radius);
+                    }
                     break;
                 case sf::Keyboard::Key::R:
-                    // TODO - reset/clear screen
+                    canvas.clear(sf::Color(128, 128, 128));
+                    canvas.display();
                     break;
                 case sf::Keyboard::Key::P:
-                    // TODO - lift drawing point up/down
+                    penDown = !penDown;
                     break;
                 default:
                     break;
@@ -55,6 +92,14 @@ int main()
         }
         float dt = clock.restart().asSeconds();
         float speed = 150.f;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift))
+        {
+            speed = 300.f;
+        }
+        else
+        {
+            speed = 150.f;
+        }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
             posY -= speed * dt;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))
@@ -63,16 +108,25 @@ int main()
             posX -= speed * dt;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
             posX += speed * dt;
-        // TODO: Keep the shape fully within the window
+
+        posX = std::clamp(posX, 0.f, float(WINDOW_HEIGHT) - radius * 2.f);
+        posY = std::clamp(posY, 0.f, float(WINDOW_WIDTH) - radius * 2.f);
+
         shape.setPosition({posX, posY});
+        outline.setPosition({posX, posY});
+
         // Stamp shape onto the persistent canvas
-        canvas.clear(sf::Color(128, 128, 128));
-        canvas.draw(shape);
-        canvas.display();
+        if (penDown)
+        {
+            canvas.draw(shape);
+            canvas.display();
+        }
+
         // Render the canvas to the window each frame
         window.clear();
         canvasSprite.setTexture(canvas.getTexture());
         window.draw(canvasSprite);
+        window.draw(outline);
         window.display();
     }
     return 0;
