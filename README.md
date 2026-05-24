@@ -1,7 +1,7 @@
 "# etch-a-sketch" 
 
 
-# Requires SFML https://www.sfml-dev.org/
+Requires SFML https://www.sfml-dev.org/
 
 # Controls
 W - up
@@ -13,8 +13,8 @@ R : clear
 C : random color
 P : pen up
 LSift : speed up
-- : shrink
-+ : grow
+'-' : shrink
+'+' : grow
 
 
 
